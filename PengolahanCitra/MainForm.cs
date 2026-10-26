@@ -477,17 +477,27 @@ namespace PengolahanCitra
             {
                 if (popup.ShowDialog(this) != DialogResult.OK) return;
 
-                if (popup.Operation == ColorOperation.PseudoColor)
+                int tolerance = popup.Tolerance;
+                string target = $"R {color.R}, G {color.G}, B {color.B}, toleransi {tolerance}";
+
+                switch (popup.Operation)
                 {
-                    Fire(ApplyOperationAsync("Pewarnaan semu...", ColorFilters.PseudoColor, "Pewarnaan semu diterapkan"));
-                }
-                else
-                {
-                    int tolerance = popup.Tolerance;
-                    bool grayBackground = popup.UseGrayBackground;
-                    Fire(ApplyOperationAsync("Color slicing...",
-                        src => ColorFilters.ColorSlicing(src, color, tolerance, grayBackground),
-                        $"Color slicing (R {color.R}, G {color.G}, B {color.B}, toleransi {tolerance}) diterapkan"));
+                    case ColorOperation.ColorSlicing:
+                        bool grayBackground = popup.UseGrayBackground;
+                        Fire(ApplyOperationAsync("Color slicing...",
+                            src => ColorFilters.ColorSlicing(src, color, tolerance, grayBackground),
+                            $"Color slicing ({target}) diterapkan"));
+                        break;
+
+                    case ColorOperation.PseudoColor:
+                        Fire(ApplyOperationAsync("Pewarnaan semu...",
+                            src => ColorFilters.PseudoColor(src, color, tolerance),
+                            $"Pewarnaan semu ({target}) diterapkan"));
+                        break;
+
+                    default:
+                        Fire(ApplyOperationAsync("Peta warna...", ColorFilters.JetColorMap, "Peta warna diterapkan"));
+                        break;
                 }
             }
         }

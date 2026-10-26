@@ -112,10 +112,50 @@ namespace PengolahanCitra.Imaging
         }
 
         /// <summary>
-        /// Pewarnaan semu (pseudo color): intensitas dipetakan ke palet "jet"
+        /// Pewarnaan semu (pseudo color) berdasarkan warna target:
+        /// piksel yang jarak warnanya ke target ≤ tolerance diwarnai dengan warna target
+        /// sesuai tingkat terangnya (gelap → hitam, terang → warna target penuh);
+        /// piksel lain menjadi abu-abu.
+        /// </summary>
+        public static RgbImage PseudoColor(RgbImage source, Color target, int tolerance)
+        {
+            var result = new RgbImage(source.Width, source.Height);
+            byte[] src = source.Pixels;
+            byte[] dst = result.Pixels;
+            int toleranceSquared = Math.Max(tolerance, 0) * Math.Max(tolerance, 0);
+            int stride = source.Stride;
+
+            Parallel.For(0, source.Height, y =>
+            {
+                int end = (y + 1) * stride;
+                for (int i = y * stride; i < end; i += 3)
+                {
+                    byte r = src[i], g = src[i + 1], b = src[i + 2];
+                    byte gray = ColorMath.Luminance(r, g, b);
+                    int dr = r - target.R, dg = g - target.G, db = b - target.B;
+
+                    if (dr * dr + dg * dg + db * db <= toleranceSquared)
+                    {
+                        double factor = gray / 255.0;
+                        dst[i] = (byte)(factor * target.R);
+                        dst[i + 1] = (byte)(factor * target.G);
+                        dst[i + 2] = (byte)(factor * target.B);
+                    }
+                    else
+                    {
+                        dst[i] = dst[i + 1] = dst[i + 2] = gray;
+                    }
+                }
+            });
+
+            return result;
+        }
+
+        /// <summary>
+        /// Peta warna "jet": intensitas seluruh gambar dipetakan ke gradasi
         /// biru (gelap) → cyan → kuning → merah (terang)
         /// </summary>
-        public static RgbImage PseudoColor(RgbImage source)
+        public static RgbImage JetColorMap(RgbImage source)
         {
             var palette = new byte[256 * 3];
             for (int i = 0; i < 256; i++)

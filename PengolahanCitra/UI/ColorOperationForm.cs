@@ -7,11 +7,13 @@ namespace PengolahanCitra.UI
     public enum ColorOperation
     {
         ColorSlicing,
-        PseudoColor
+        PseudoColor,
+        JetColorMap
     }
 
     /// <summary>
-    /// Popup setelah user mengklik gambar: Color Slicing berdasarkan warna yang diklik, atau Pewarnaan Semu
+    /// Popup setelah user mengklik gambar: Color Slicing dan Pewarnaan Semu berdasarkan warna yang diklik,
+    /// atau Peta Warna (jet) untuk seluruh gambar
     /// </summary>
     public class ColorOperationForm : Form
     {
@@ -32,7 +34,7 @@ namespace PengolahanCitra.UI
             BackColor = NeuTheme.Surface;
             ForeColor = NeuTheme.Ink;
             Font = NeuTheme.LabelFont;
-            ClientSize = new Size(340, 548);
+            ClientSize = new Size(340, 692);
             Padding = new Padding(18, 8, 18, 12);
 
             // Contoh warna dalam bidang cekung, nilai RGB di sebelahnya
@@ -60,6 +62,9 @@ namespace PengolahanCitra.UI
             NeuButton pseudo = NeuLayout.Button("Terapkan pewarnaan semu", NeuTheme.Icons.Adjust);
             pseudo.Click += (s, e) => Choose(ColorOperation.PseudoColor);
 
+            NeuButton colorMap = NeuLayout.Button("Terapkan peta warna");
+            colorMap.Click += (s, e) => Choose(ColorOperation.JetColorMap);
+
             NeuButton cancel = NeuLayout.Button("Batal");
             cancel.DialogResult = DialogResult.Cancel;
             CancelButton = cancel;
@@ -68,14 +73,18 @@ namespace PengolahanCitra.UI
                 NeuLayout.Title("Warna yang diklik"),
                 NeuLayout.Spacer(6),
                 colorRow,
+                tolerance,
+                NeuLayout.Hint("Dipakai oleh color slicing dan pewarnaan semu.", 22),
                 NeuLayout.Title("Color slicing"),
                 NeuLayout.Hint("Pertahankan warna yang mirip dengan warna di atas; warna lain dihilangkan.", 34),
-                tolerance,
                 grayBackground,
                 slicing,
                 NeuLayout.Title("Pewarnaan semu"),
-                NeuLayout.Hint("Ubah tingkat terang gambar menjadi gradasi biru, hijau, kuning, merah.", 34),
+                NeuLayout.Hint("Warna yang mirip diwarnai dengan warna di atas sesuai tingkat terangnya; sisanya abu-abu.", 34),
                 pseudo,
+                NeuLayout.Title("Peta warna"),
+                NeuLayout.Hint("Seluruh gambar diubah ke gradasi biru, hijau, kuning, merah.", 34),
+                colorMap,
                 cancel);
 
             AcceptButton = slicing;

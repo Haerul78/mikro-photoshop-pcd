@@ -10,7 +10,8 @@ Aplikasi desktop (C# WinForms, .NET Framework 4.7.2) untuk latihan pengolahan ci
 - **Deteksi tepi**: Roberts, Prewitt, Sobel, Canny (threshold Low/High bisa diatur).
 - **Aritmatika citra**: tambah, kurang, kali, bagi (gambar kedua otomatis di-resize).
 - **Geometri**: rotasi (45°, 90°, 180°, -90°, sudut bebas), translasi, flip horizontal/vertikal.
-- **Operasi warna**: klik gambar untuk Color Slicing berdasarkan warna yang diklik, atau Pewarnaan Semu.
+- **Operasi warna** (klik gambar): Color Slicing dan Pewarnaan Semu berdasarkan warna yang diklik + toleransi,
+  serta Peta Warna (jet) untuk seluruh gambar.
 - **Histogram** R, G, B, dan Gray yang selalu mengikuti gambar saat ini.
 - **Undo / Redo** (maksimal 20 langkah, dibatasi juga oleh memori).
 - **Zoom** 5–400% dengan scroll, tombol Fit dan 100%, atau Ctrl + scroll mouse.
@@ -36,7 +37,7 @@ Satu warna aksen `#4A7BF7` untuk state aktif, isi slider, dan focus ring.
 └ Status bar: nama file · ukuran · status ........................... zoom · Fit · 100% ┘
 ```
 
-Klik gambar di kanvas untuk membuka popup Color Slicing / Pewarnaan Semu.
+Klik gambar di kanvas untuk membuka popup Color Slicing / Pewarnaan Semu / Peta Warna.
 Gambar juga bisa dibuka dengan menyeret file ke kanvas.
 
 ## Shortcut
@@ -77,7 +78,8 @@ PengolahanCitra/
 ├── Imaging/                 Logika pengolahan citra (tanpa UI)
 │   ├── RgbImage.cs          Gambar RGB dalam array 1D + konversi Bitmap (LockBits)
 │   ├── ColorMath.cs         Clamp, luminance, lookup table
-│   ├── ColorFilters.cs      Channel, grayscale, threshold, negative, brightness, contrast, color slicing, pseudo color
+│   ├── ColorFilters.cs      Channel, grayscale, threshold, negative, brightness, contrast, color slicing,
+│   │                        pewarnaan semu, peta warna (jet)
 │   ├── Convolution.cs       Kernel 3x3: Gaussian, mean, sharpen
 │   ├── EdgeDetection.cs     Roberts, Prewitt, Sobel, Canny
 │   ├── Histogram.cs         Histogram, equalization
@@ -98,7 +100,7 @@ PengolahanCitra/
 │   ├── ImageViewer.cs       Kanvas: zoom, scroll, Before/After, drag & drop
 │   ├── InspectorSection.cs  Dasar bagian kolom kanan
 │   ├── HistogramPanel, FilterPanel, EdgePanel, GeometryPanel, ArithmeticPanel
-│   └── ColorOperationForm.cs  Popup Color Slicing / Pewarnaan Semu
+│   └── ColorOperationForm.cs  Popup Color Slicing / Pewarnaan Semu / Peta Warna
 ├── MainForm.cs              State utama, top bar, rail alat, buka/simpan, undo, operasi di background
 ├── MainForm.Filter.cs       Logika alat Penyesuaian & filter
 ├── MainForm.Edge.cs         Logika alat Deteksi tepi
