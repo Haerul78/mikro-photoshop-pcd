@@ -1,11 +1,12 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using PengolahanCitra.Imaging;
 
 namespace PengolahanCitra
 {
     /// <summary>
-    /// Panel Edge: thumbnail metode, preview ukuran penuh, threshold Canny, dan Terapkan
+    /// Alat Deteksi tepi: thumbnail metode, preview ukuran penuh, threshold Canny, Batal, dan Terapkan.
+    /// EdgePanel menjaga Low ≤ High, jadi threshold dari panel selalu valid.
     /// </summary>
     public partial class MainForm
     {
@@ -25,99 +26,69 @@ namespace PengolahanCitra
         private void InitializeEdgePanel()
         {
             edgePanel.MethodSelected += (s, method) => Fire(SelectEdgeMethodAsync(method));
-            edgePanel.RefreshCannyClicked += (s, e) => RefreshCanny();
+            edgePanel.CannyThresholdsChanged += (s, e) => RefreshCanny();
+            edgePanel.CancelClicked += (s, e) => CancelPreview();
             edgePanel.ApplyClicked += (s, e) => ApplyEdge();
         }
 
         private void PrepareEdgePanel()
         {
             edgePanel.ClearSelection();
-
-            // Thumbnail tetap dibuat walau threshold sedang tidak valid (Low > High)
-            int low = Math.Min(edgePanel.LowThreshold, edgePanel.HighThreshold);
-            int high = Math.Max(edgePanel.LowThreshold, edgePanel.HighThreshold);
+            if (edgeThumbnailSource == null) return;
 
             foreach (EdgeMethod method in Enum.GetValues(typeof(EdgeMethod)))
             {
-                UpdateEdgeThumbnail(method, low, high);
+                UpdateEdgeThumbnail(method);
             }
         }
 
-        private void UpdateEdgeThumbnail(EdgeMethod method, int low, int high)
+        private void UpdateEdgeThumbnail(EdgeMethod method)
         {
-            RgbImage edges = EdgeDetection.Apply(edgeThumbnailSource, method, low, high);
+            RgbImage edges = EdgeDetection.Apply(edgeThumbnailSource, method, edgePanel.LowThreshold, edgePanel.HighThreshold);
             edgePanel.SetThumbnail(method, Geometry.FitWithin(edges, ThumbnailSourceSize).ToBitmap());
         }
 
         internal async Task SelectEdgeMethodAsync(EdgeMethod method)
         {
-            if (isBusy || activePanel != SidePanel.Edge) return;
-            if (!TryGetCannyThresholds(method, out int low, out int high)) return;
+            if (isBusy || activeTool != Tool.Edge) return;
 
             int requestId = ++previewRequestId;
             RgbImage source = document.Current;
+            int low = edgePanel.LowThreshold;
+            int high = edgePanel.HighThreshold;
 
-            var result = await RunBusyAsync($"Deteksi tepi {method}...", () =>
-            {
-                RgbImage edges = EdgeDetection.Apply(source, method, low, high);
-                return Tuple.Create(edges, edges.ToBitmap());
-            });
-            if (result == null) return;
+            PreviewResult preview = await RunBusyAsync($"Deteksi tepi {method}...",
+                () => PreviewResult.Create(EdgeDetection.Apply(source, method, low, high)));
+            if (!TryShowPreview(requestId, Tool.Edge, preview)) return;
 
-            if (requestId != previewRequestId || activePanel != SidePanel.Edge)
-            {
-                result.Item2.Dispose();
-                return;
-            }
-
-            ShowPreview(result.Item2);
-            edgePreview = new EdgePreview { Method = method, Low = low, High = high, Image = result.Item1 };
-            SetStatus($"Preview {method} — klik Terapkan untuk menerapkan");
+            edgePreview = new EdgePreview { Method = method, Low = low, High = high, Image = preview.Image };
+            SetStatus($"Preview {method} — klik Terapkan untuk menerapkan, atau Esc untuk batal");
         }
 
+        /// <summary>Threshold Canny berubah: perbarui thumbnail Canny dan preview bila Canny sedang dipilih</summary>
         private void RefreshCanny()
         {
-            if (!TryGetCannyThresholds(EdgeMethod.Canny, out int low, out int high)) return;
-
-            UpdateEdgeThumbnail(EdgeMethod.Canny, low, high);
+            if (edgeThumbnailSource == null) return;
+            UpdateEdgeThumbnail(EdgeMethod.Canny);
 
             if (edgePanel.SelectedMethod == EdgeMethod.Canny) Fire(SelectEdgeMethodAsync(EdgeMethod.Canny));
-            else SetStatus($"Thumbnail Canny diperbarui (Low {low}, High {high})");
         }
 
         private void ApplyEdge()
         {
             if (!(edgePanel.SelectedMethod is EdgeMethod method))
             {
-                ShowWarning("Pilih metode edge detection terlebih dahulu!");
+                ShowWarning("Pilih metode deteksi tepi terlebih dahulu!");
                 return;
             }
 
-            if (!TryGetCannyThresholds(method, out int low, out int high)) return;
-
+            int low = edgePanel.LowThreshold;
+            int high = edgePanel.HighThreshold;
             RgbImage cached = edgePreview != null && edgePreview.Matches(method, low, high) ? edgePreview.Image : null;
 
             Fire(ApplyOperationAsync($"Deteksi tepi {method}...",
                 src => cached ?? EdgeDetection.Apply(src, method, low, high),
-                $"Edge detection {method} diterapkan"));
-        }
-
-        /// <summary>
-        /// Threshold Canny dari UI; Low harus lebih kecil atau sama dengan High.
-        /// Metode selain Canny selalu valid.
-        /// </summary>
-        private bool TryGetCannyThresholds(EdgeMethod method, out int low, out int high)
-        {
-            low = edgePanel.LowThreshold;
-            high = edgePanel.HighThreshold;
-
-            if (method == EdgeMethod.Canny && low > high)
-            {
-                ShowWarning("Low Threshold tidak boleh lebih besar dari High Threshold!");
-                return false;
-            }
-
-            return true;
+                $"Deteksi tepi {method} diterapkan"));
         }
     }
 }

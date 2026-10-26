@@ -1,5 +1,6 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.Windows.Forms;
+using PengolahanCitra.UI.Neu;
 
 namespace PengolahanCitra.UI
 {
@@ -10,102 +11,80 @@ namespace PengolahanCitra.UI
     }
 
     /// <summary>
-    /// Popup setelah user mengklik gambar: pilih Color Slicing (berdasarkan warna yang diklik)
-    /// atau Pewarnaan Semu
+    /// Popup setelah user mengklik gambar: Color Slicing berdasarkan warna yang diklik, atau Pewarnaan Semu
     /// </summary>
     public class ColorOperationForm : Form
     {
-        private readonly TrackBar toleranceTrackBar;
-        private readonly CheckBox grayBackgroundCheckBox;
+        private readonly NeuSlider tolerance;
+        private readonly NeuToggle grayBackground;
 
         public ColorOperationForm(Color selectedColor)
         {
             SelectedColor = selectedColor;
 
-            Text = "Pilih Operasi Warna";
+            Text = "Operasi warna";
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
             MaximizeBox = false;
             MinimizeBox = false;
             ShowInTaskbar = false;
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(300, 400);
-            BackColor = Theme.Control;
-            Padding = new Padding(20, 10, 20, 15);
+            BackColor = NeuTheme.Surface;
+            ForeColor = NeuTheme.Ink;
+            Font = NeuTheme.LabelFont;
+            ClientSize = new Size(340, 548);
+            Padding = new Padding(18, 8, 18, 12);
 
-            var swatch = new Panel
+            // Contoh warna dalam bidang cekung, nilai RGB di sebelahnya
+            var swatchFrame = new NeuPanel { Style = NeuStyle.Inset, Radius = NeuTheme.RadiusMedium, Depth = NeuTheme.DepthInset, Dock = DockStyle.Left, Width = 76, Padding = new Padding(9) };
+            swatchFrame.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = selectedColor });
+            var rgb = new Label
             {
-                BackColor = selectedColor,
-                BorderStyle = BorderStyle.FixedSingle,
-                Dock = DockStyle.Left,
-                Width = 60
-            };
-            var rgbLabel = new Label
-            {
-                Text = $"R: {selectedColor.R}  G: {selectedColor.G}  B: {selectedColor.B}",
-                Font = new Font("Consolas", 10F),
-                ForeColor = Theme.Text,
+                Text = $"R {selectedColor.R}   G {selectedColor.G}   B {selectedColor.B}",
+                Font = NeuTheme.ValueFont,
+                ForeColor = NeuTheme.Ink,
                 Dock = DockStyle.Fill,
-                Padding = new Padding(10, 0, 0, 0),
+                Padding = new Padding(14, 0, 0, 0),
                 TextAlign = ContentAlignment.MiddleLeft
             };
-            var colorRow = new Panel { Dock = DockStyle.Top, Height = 60 };
-            colorRow.Controls.Add(rgbLabel);
-            colorRow.Controls.Add(swatch);
+            var colorRow = new Panel { Height = 76, BackColor = NeuTheme.Surface };
+            colorRow.Controls.Add(rgb);
+            colorRow.Controls.Add(swatchFrame);
 
-            var toleranceValue = new Label
-            {
-                Text = "50",
-                Dock = DockStyle.Right,
-                Width = 40,
-                Font = Theme.SectionFont,
-                ForeColor = Theme.Accent,
-                TextAlign = ContentAlignment.BottomRight
-            };
-            Label toleranceLabel = Theme.CreateSectionLabel("Toleransi warna");
-            toleranceLabel.Controls.Add(toleranceValue);
+            tolerance = new NeuSlider { Text = "Toleransi warna", Minimum = 1, Maximum = 200, Value = 50, Height = 56, AccessibleName = "Toleransi warna" };
+            grayBackground = new NeuToggle { Text = "Background abu-abu (bukan hitam)", Height = 40 };
 
-            toleranceTrackBar = new TrackBar
-            {
-                Minimum = 1,
-                Maximum = 200,
-                Value = 50,
-                TickFrequency = 20,
-                Dock = DockStyle.Top
-            };
-            toleranceTrackBar.ValueChanged += (s, e) => toleranceValue.Text = toleranceTrackBar.Value.ToString();
+            NeuButton slicing = NeuLayout.Button("Terapkan color slicing", NeuTheme.Icons.Check, primary: true);
+            slicing.Click += (s, e) => Choose(ColorOperation.ColorSlicing);
 
-            grayBackgroundCheckBox = new CheckBox
-            {
-                Text = "Background grayscale (bukan hitam)",
-                ForeColor = Theme.Text,
-                Font = Theme.NormalFont,
-                Dock = DockStyle.Top,
-                Height = 26
-            };
+            NeuButton pseudo = NeuLayout.Button("Terapkan pewarnaan semu", NeuTheme.Icons.Adjust);
+            pseudo.Click += (s, e) => Choose(ColorOperation.PseudoColor);
 
-            Button cancel = Theme.CreateButton("✕ Batal", Theme.ControlLight, null, 30);
+            NeuButton cancel = NeuLayout.Button("Batal");
             cancel.DialogResult = DialogResult.Cancel;
             CancelButton = cancel;
 
-            Theme.StackTopDown(this,
-                Theme.CreateTitle("Pilih Operasi Warna"),
-                Theme.CreateSectionLabel("Warna yang dipilih"),
+            NeuLayout.StackTopDown(this,
+                NeuLayout.Title("Warna yang diklik"),
+                NeuLayout.Spacer(6),
                 colorRow,
-                toleranceLabel,
-                toleranceTrackBar,
-                grayBackgroundCheckBox,
-                Theme.CreateButton("Color Slicing", Theme.Accent, (s, e) => Choose(ColorOperation.ColorSlicing), 40),
-                Theme.CreateSectionLabel("Tidak bergantung warna yang dipilih:"),
-                Theme.CreateButton("Pewarnaan Semu", Theme.AccentDark, (s, e) => Choose(ColorOperation.PseudoColor), 36),
-                new Panel { Dock = DockStyle.Top, Height = 10 },
+                NeuLayout.Title("Color slicing"),
+                NeuLayout.Hint("Pertahankan warna yang mirip dengan warna di atas; warna lain dihilangkan.", 34),
+                tolerance,
+                grayBackground,
+                slicing,
+                NeuLayout.Title("Pewarnaan semu"),
+                NeuLayout.Hint("Ubah tingkat terang gambar menjadi gradasi biru, hijau, kuning, merah.", 34),
+                pseudo,
                 cancel);
+
+            AcceptButton = slicing;
         }
 
         public Color SelectedColor { get; }
         public ColorOperation Operation { get; private set; }
-        public int Tolerance => toleranceTrackBar.Value;
-        public bool UseGrayBackground => grayBackgroundCheckBox.Checked;
+        public int Tolerance => tolerance.Value;
+        public bool UseGrayBackground => grayBackground.Checked;
 
         private void Choose(ColorOperation operation)
         {

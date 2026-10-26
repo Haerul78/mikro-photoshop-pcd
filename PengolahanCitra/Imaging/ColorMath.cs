@@ -1,4 +1,4 @@
-namespace PengolahanCitra.Imaging
+﻿namespace PengolahanCitra.Imaging
 {
     /// <summary>
     /// Fungsi matematika kecil yang dipakai di semua operasi

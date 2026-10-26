@@ -1,66 +1,56 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Linq;
-using System.Windows.Forms;
 using PengolahanCitra.Imaging;
+using PengolahanCitra.UI.Neu;
 
 namespace PengolahanCitra.UI
 {
     /// <summary>
-    /// Panel kanan: pilihan filter (thumbnail), brightness, dan tombol Apply
+    /// Alat "Penyesuaian &amp; filter": slider brightness, grid thumbnail filter, Batal dan Terapkan
     /// </summary>
-    public class FilterPanel : UserControl
+    public class FilterPanel : InspectorSection
     {
-        private readonly ThumbnailGallery<FilterKind> gallery;
-        private readonly TrackBar brightnessTrackBar;
-        private readonly Label brightnessValueLabel;
+        private readonly NeuGallery<FilterKind> gallery;
+        private readonly NeuSlider brightness;
         private bool suppressEvents;
 
         public FilterPanel()
         {
-            BackColor = Theme.Sidebar;
-            Padding = new Padding(8);
-
-            gallery = new ThumbnailGallery<FilterKind>(Enum.GetValues(typeof(FilterKind)).Cast<FilterKind>(), k => k.ToString())
+            brightness = new NeuSlider
             {
-                Dock = DockStyle.Fill
-            };
-            gallery.ItemClicked += (s, kind) => SelectFilter(kind, raiseEvent: true);
-
-            brightnessValueLabel = new Label
-            {
-                Text = "0",
-                Dock = DockStyle.Right,
-                Width = 40,
-                Font = Theme.SmallFont,
-                ForeColor = Theme.TextMuted,
-                TextAlign = ContentAlignment.BottomRight
-            };
-            Label brightnessLabel = Theme.CreateSectionLabel("Brightness");
-            brightnessLabel.Controls.Add(brightnessValueLabel);
-
-            brightnessTrackBar = new TrackBar
-            {
+                Text = "Brightness",
                 Minimum = -100,
                 Maximum = 100,
-                TickFrequency = 10,
+                Origin = 0,
                 SmallChange = 1,
                 LargeChange = 10,
-                Dock = DockStyle.Top
+                Height = 56,
+                AccessibleName = "Brightness",
+                ValueFormatter = v => v > 0 ? "+" + v : v.ToString()
             };
-            brightnessTrackBar.ValueChanged += OnBrightnessValueChanged;
+            brightness.ValueChanged += (s, e) =>
+            {
+                if (!suppressEvents) BrightnessChanged?.Invoke(this, EventArgs.Empty);
+            };
 
-            var bottom = new Panel { Dock = DockStyle.Bottom, Height = 160 };
-            Theme.StackTopDown(bottom,
-                brightnessLabel,
-                brightnessTrackBar,
-                Theme.CreateButton("Reset Brightness", Theme.ControlLight, (s, e) => Brightness = 0, 26),
-                new Panel { Dock = DockStyle.Top, Height = 8 },
-                Theme.CreateButton("✓ Apply Filter", Theme.Accent, (s, e) => ApplyClicked?.Invoke(this, EventArgs.Empty), 36));
+            gallery = new NeuGallery<FilterKind>(Enum.GetValues(typeof(FilterKind)).Cast<FilterKind>(), k => k.ToString());
+            gallery.ItemClicked += (s, kind) => SelectFilter(kind, raiseEvent: true);
 
-            Controls.Add(gallery);
-            Controls.Add(bottom);
-            Controls.Add(Theme.CreateTitle("Filter Preview"));
+            NeuButton cancel = NeuLayout.Button("Batal", NeuTheme.Icons.Cancel);
+            cancel.Click += (s, e) => CancelClicked?.Invoke(this, EventArgs.Empty);
+            NeuButton apply = NeuLayout.Button("Terapkan", NeuTheme.Icons.Check, primary: true);
+            apply.Click += (s, e) => ApplyClicked?.Invoke(this, EventArgs.Empty);
+
+            NeuLayout.StackTopDown(this,
+                NeuLayout.Title("Penyesuaian"),
+                NeuLayout.Spacer(4),
+                brightness,
+                NeuLayout.Title("Filter"),
+                NeuLayout.Hint("Klik thumbnail untuk melihat preview di kanvas.", 22),
+                gallery,
+                NeuLayout.Spacer(4),
+                NeuLayout.Row(cancel.Height, cancel, apply));
 
             SelectFilter(FilterKind.Original, raiseEvent: false);
         }
@@ -68,18 +58,17 @@ namespace PengolahanCitra.UI
         public event EventHandler<FilterKind> FilterSelected;
         public event EventHandler BrightnessChanged;
         public event EventHandler ApplyClicked;
+        public event EventHandler CancelClicked;
 
         public FilterKind SelectedFilter { get; private set; }
 
         public int Brightness
         {
-            get => brightnessTrackBar.Value;
-            set => brightnessTrackBar.Value = value;
+            get => brightness.Value;
+            set => brightness.Value = value;
         }
 
-        /// <summary>
-        /// Kembali ke Original dan brightness 0 tanpa memicu event
-        /// </summary>
+        /// <summary>Kembali ke Original dan brightness 0 tanpa memicu event</summary>
         public void ResetSelection()
         {
             suppressEvents = true;
@@ -96,19 +85,11 @@ namespace PengolahanCitra.UI
 
         public void SetThumbnail(FilterKind kind, Image thumbnail) => gallery.SetThumbnail(kind, thumbnail);
 
-        public void ClearThumbnails() => gallery.ClearThumbnails();
-
         private void SelectFilter(FilterKind kind, bool raiseEvent)
         {
             SelectedFilter = kind;
             gallery.Select(kind);
             if (raiseEvent) FilterSelected?.Invoke(this, kind);
-        }
-
-        private void OnBrightnessValueChanged(object sender, EventArgs e)
-        {
-            brightnessValueLabel.Text = brightnessTrackBar.Value.ToString();
-            if (!suppressEvents) BrightnessChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

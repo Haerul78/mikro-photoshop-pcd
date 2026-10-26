@@ -1,3 +1,4 @@
+﻿using System;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -6,19 +7,19 @@ using PengolahanCitra.Imaging;
 namespace PengolahanCitra
 {
     /// <summary>
-    /// Panel Aritmatika & Geometri: operasi dua citra, rotasi, translasi, dan flip
+    /// Alat Geometri (rotasi, translasi, flip) dan Aritmatika citra
     /// </summary>
     public partial class MainForm
     {
-        private void InitializeTransformPanel()
+        private void InitializeTransformPanels()
         {
-            transformPanel.ArithmeticRequested += (s, operation) => ChooseSecondImage(operation);
-            transformPanel.RotateRequested += (s, angle) => Fire(RotateAsync(angle));
-            transformPanel.TranslateRequested += (s, offset) => Fire(ApplyOperationAsync("Menggeser gambar...",
+            arithmeticPanel.ArithmeticRequested += (s, operation) => ChooseSecondImage(operation);
+            geometryPanel.RotateRequested += (s, angle) => Fire(RotateAsync(angle));
+            geometryPanel.TranslateRequested += (s, offset) => Fire(ApplyOperationAsync("Menggeser gambar...",
                 src => Geometry.Translate(src, offset.X, offset.Y),
                 $"Translasi (X: {offset.X}, Y: {offset.Y}) diterapkan"));
-            transformPanel.FlipRequested += (s, horizontal) => Fire(ApplyOperationAsync("Flip gambar...",
-                horizontal ? (System.Func<RgbImage, RgbImage>)Geometry.FlipHorizontal : Geometry.FlipVertical,
+            geometryPanel.FlipRequested += (s, horizontal) => Fire(ApplyOperationAsync("Flip gambar...",
+                horizontal ? (Func<RgbImage, RgbImage>)Geometry.FlipHorizontal : Geometry.FlipVertical,
                 horizontal ? "Flip horizontal diterapkan" : "Flip vertikal diterapkan"));
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -51,8 +51,6 @@ namespace PengolahanCitra.Imaging
             ClearRotation();
             OnChanged();
         }
-
-        public void ResetToOriginal() => Commit(Original);
 
         #region Rotation
 

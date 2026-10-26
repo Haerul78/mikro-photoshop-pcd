@@ -1,5 +1,4 @@
-using System;
-using System.Drawing;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using PengolahanCitra.Imaging;
@@ -7,7 +6,7 @@ using PengolahanCitra.Imaging;
 namespace PengolahanCitra
 {
     /// <summary>
-    /// Panel Filter: thumbnail, preview ukuran penuh, brightness, dan Apply
+    /// Alat Penyesuaian &amp; filter: thumbnail, preview ukuran penuh, brightness, Batal, dan Terapkan
     /// </summary>
     public partial class MainForm
     {
@@ -27,6 +26,7 @@ namespace PengolahanCitra
             filterPanel.FilterSelected += (s, kind) => Fire(SelectFilterAsync(kind));
             filterPanel.BrightnessChanged += (s, e) => { brightnessTimer.Stop(); brightnessTimer.Start(); };
             filterPanel.ApplyClicked += (s, e) => ApplyFilter();
+            filterPanel.CancelClicked += (s, e) => CancelPreview();
 
             // Debounce: preview brightness baru dihitung setelah slider berhenti sejenak
             brightnessTimer.Tick += (s, e) => { brightnessTimer.Stop(); Fire(UpdateBrightnessPreviewAsync()); };
@@ -34,9 +34,12 @@ namespace PengolahanCitra
 
         private void PrepareFilterPanel()
         {
+            brightnessTimer.Stop();
             filterPanel.ResetSelection();
 
             RgbImage thumbnail = thumbnailSource;
+            if (thumbnail == null) return;
+
             double sizeRatio = (double)thumbnail.Width / document.Current.Width;
 
             foreach (FilterKind kind in Enum.GetValues(typeof(FilterKind)))
@@ -48,43 +51,36 @@ namespace PengolahanCitra
 
         internal async Task SelectFilterAsync(FilterKind kind)
         {
-            if (isBusy || activePanel != SidePanel.Filter) return;
+            if (isBusy || activeTool != Tool.Adjust) return;
 
             int requestId = ++previewRequestId;
             RgbImage source = document.Current;
             int brightness = filterPanel.Brightness;
+            RgbImage filtered = null;
 
-            var result = await RunBusyAsync($"Menerapkan {kind}...", () =>
+            PreviewResult preview = await RunBusyAsync($"Menerapkan {kind}...", () =>
             {
-                RgbImage filtered = FilterCatalog.Apply(source, kind);
-                RgbImage shown = brightness == 0 ? filtered : ColorFilters.Brightness(filtered, brightness);
-                return Tuple.Create(filtered, shown.ToBitmap());
+                filtered = FilterCatalog.Apply(source, kind);
+                return PreviewResult.Create(WithBrightness(filtered, brightness));
             });
-            if (result == null) return;
+            if (!TryShowPreview(requestId, Tool.Adjust, preview)) return;
 
-            if (requestId != previewRequestId || activePanel != SidePanel.Filter)
-            {
-                result.Item2.Dispose();
-                return;
-            }
-
-            ShowPreview(result.Item2);
-            filterPreview = new FilterPreview { Kind = kind, Image = result.Item1 };
-            SetStatus($"Preview {kind} — klik Apply Filter untuk menerapkan");
+            filterPreview = new FilterPreview { Kind = kind, Image = filtered };
+            SetStatus($"Preview {kind} — klik Terapkan untuk menerapkan, atau Esc untuk batal");
         }
 
         private async Task UpdateBrightnessPreviewAsync()
         {
-            if (activePanel != SidePanel.Filter || isBusy) return;
+            if (activeTool != Tool.Adjust || isBusy || !document.IsLoaded) return;
 
             int requestId = ++previewRequestId;
             RgbImage source = CurrentFilterResult() ?? document.Current;
             int brightness = filterPanel.Brightness;
 
-            Bitmap bitmap;
+            PreviewResult preview;
             try
             {
-                bitmap = await Task.Run(() => (brightness == 0 ? source : ColorFilters.Brightness(source, brightness)).ToBitmap());
+                preview = await Task.Run(() => PreviewResult.Create(WithBrightness(source, brightness)));
             }
             catch (Exception ex)
             {
@@ -92,13 +88,7 @@ namespace PengolahanCitra
                 return;
             }
 
-            if (requestId != previewRequestId || activePanel != SidePanel.Filter)
-            {
-                bitmap.Dispose();
-                return;
-            }
-
-            ShowPreview(bitmap);
+            TryShowPreview(requestId, Tool.Adjust, preview);
         }
 
         private void ApplyFilter()
@@ -116,11 +106,9 @@ namespace PengolahanCitra
             RgbImage cached = CurrentFilterResult();
             string label = brightness == 0 ? kind.ToString() : $"{kind} + brightness {brightness}";
 
-            Fire(ApplyOperationAsync($"Menerapkan {label}...", src =>
-            {
-                RgbImage filtered = cached ?? FilterCatalog.Apply(src, kind);
-                return brightness == 0 ? filtered : ColorFilters.Brightness(filtered, brightness);
-            }, $"Filter {label} diterapkan"));
+            Fire(ApplyOperationAsync($"Menerapkan {label}...",
+                src => WithBrightness(cached ?? FilterCatalog.Apply(src, kind), brightness),
+                $"Filter {label} diterapkan"));
         }
 
         /// <summary>
@@ -130,5 +118,8 @@ namespace PengolahanCitra
         {
             return filterPreview != null && filterPreview.Kind == filterPanel.SelectedFilter ? filterPreview.Image : null;
         }
+
+        private static RgbImage WithBrightness(RgbImage image, int brightness) =>
+            brightness == 0 ? image : ColorFilters.Brightness(image, brightness);
     }
 }
