@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# File sementara Microsoft Office (muncul saat dokumen sedang dibuka)
+~$*

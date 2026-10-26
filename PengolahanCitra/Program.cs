@@ -1,22 +1,27 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace PengolahanCitra
 {
     internal static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new Form1());
+
+            // Error yang tidak tertangkap ditampilkan sebagai pesan, bukan menutup aplikasi
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += OnThreadException;
+
+            Application.Run(new MainForm());
+        }
+
+        private static void OnThreadException(object sender, ThreadExceptionEventArgs e)
+        {
+            MessageBox.Show(e.Exception.Message, "Terjadi kesalahan", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

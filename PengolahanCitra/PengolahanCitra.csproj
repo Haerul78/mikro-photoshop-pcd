@@ -22,6 +22,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,49 +33,71 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.ServiceProcess" />
-    <Reference Include="System.Windows.Forms.DataVisualization" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ColorSlicingForm.cs">
+    <Compile Include="Imaging\Arithmetic.cs" />
+    <Compile Include="Imaging\ColorFilters.cs" />
+    <Compile Include="Imaging\ColorMath.cs" />
+    <Compile Include="Imaging\Convolution.cs" />
+    <Compile Include="Imaging\EdgeDetection.cs" />
+    <Compile Include="Imaging\FilterCatalog.cs" />
+    <Compile Include="Imaging\Geometry.cs" />
+    <Compile Include="Imaging\Histogram.cs" />
+    <Compile Include="Imaging\ImageDocument.cs" />
+    <Compile Include="Imaging\ImageFile.cs" />
+    <Compile Include="Imaging\RgbImage.cs" />
+    <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ColorSlicingForm.Designer.cs">
-      <DependentUpon>ColorSlicingForm.cs</DependentUpon>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form1.cs">
-      <SubType>Form</SubType>
+    <Compile Include="MainForm.Edge.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Form1.Designer.cs">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="MainForm.Filter.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Helpers\ImageHelper.cs" />
-    <Compile Include="Helpers\MathHelper.cs" />
+    <Compile Include="MainForm.Transform.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\ArithmeticService.cs" />
-    <Compile Include="Services\ConvolutionService.cs" />
-    <Compile Include="Services\FilterService.cs" />
-    <Compile Include="Services\GeometryService.cs" />
-    <Compile Include="Services\HistogramService.cs" />
-    <EmbeddedResource Include="ColorSlicingForm.resx">
-      <DependentUpon>ColorSlicingForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Form1.resx">
-      <DependentUpon>Form1.cs</DependentUpon>
+    <Compile Include="UI\ColorOperationForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\EdgePanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\FilterPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\HistogramPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\ImageViewer.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\Theme.cs" />
+    <Compile Include="UI\ThumbnailGallery.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\ThumbnailTile.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\TransformPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
